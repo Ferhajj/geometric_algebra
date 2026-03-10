@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometrik Cebir – İnteraktif Laboratuvar</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07070f;
+    --bg2: #0e0e1c;
+    --bg3: #15152a;
+    --gold: #d4a84b;
+    --gold-dim: #7a5e25;
+    --cyan: #4dc4d9;
+    --rose: #d96060;
+    --green: #5dc48e;
+    --purple: #9f7fd4;
+    --text: #e8e8f0;
+    --text-dim: #8888a8;
+    --border: #2a2a45;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px 20px;
+    background: var(--bg2);
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(12px);
+  }
+  .header-title {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .header-title h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+  }
+  .header-title p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .header-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    background: var(--bg3);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* ---- TABS ---- */
+  .tab-bar {
+    display: flex; gap: 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 0 40px;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    padding: 14px 20px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+  .tab-num {
+    color: var(--gold-dim);
+    margin-right: 7px;
+  }
+
+  /* ---- PANELS ---- */
+  .panel { display: none; padding: 40px; max-width: 1100px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ---- FORMULA CARD ---- */
+  .formula-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    border-radius: 0 4px 4px 0;
+  }
+  .formula-card h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.35rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+    font-weight: 300;
+  }
+  .formula-card p {
+    font-size: 1rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .formula-card .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--bg3);
+    padding: 10px 16px;
+    margin-top: 12px;
+    border-radius: 2px;
+    color: var(--cyan);
+    display: inline-block;
+  }
+
+  /* ---- LAYOUT ---- */
+  .lab-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+  }
+  @media (max-width: 800px) {
+    .lab-layout { grid-template-columns: 1fr; }
+    header { padding: 16px 20px; }
+    .panel { padding: 24px 20px; }
+    .tab-bar { padding: 0 20px; }
+  }
+
+  /* ---- CANVAS ---- */
+  .canvas-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .canvas-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  canvas { display: block; }
+
+  /* ---- CONTROLS ---- */
+  .controls {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .ctrl-group {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .ctrl-group h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  .ctrl-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--gold);
+    width: 28px; flex-shrink: 0;
+  }
+  input[type=range] {
+    flex: 1;
+    appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(212,168,75,0.4);
+  }
+  .ctrl-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--cyan);
+    width: 52px; text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ---- READOUT ---- */
+  .readout {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .readout h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .readout-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 7px; border-bottom: 1px solid var(--border); padding-bottom: 6px;
+  }
+  .readout-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .readout-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold);
+  }
+  .readout-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--cyan);
+  }
+
+  /* ---- BUTTON ---- */
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 9px 18px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+  .btn.accent { border-color: var(--cyan); color: var(--cyan); }
+  .btn.accent:hover { background: rgba(77,196,217,0.15); }
+
+  /* ---- LEGEND ---- */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+
+  /* ---- HINT ---- */
+  .hint {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-top: 8px;
+  }
+
+  /* Robot arm full panel */
+  .robot-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Scrollable canvas hint */
+  .drag-hint {
+    position: absolute; bottom: 10px; right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    pointer-events: none;
+    letter-spacing: 0.06em;
+  }
+
+  /* Intro cards */
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .intro-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .intro-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-color, var(--gold));
+  }
+  .intro-card:hover {
+    border-color: var(--accent-color, var(--gold));
+    transform: translateY(-2px);
+  }
+  .intro-card .ic-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .intro-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .intro-card p {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* KGC special */
+  .kgc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 700px) { .kgc-grid { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <h1>Geometrik Cebir Laboratuvarı</h1>
+    <p>Geometrik Cebir – Bilgisayar Bilimciler için İnteraktif Simülasyon Ortamı</p>
+  </div>
+  <span class="header-badge">GC Lab v1.0</span>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab(0)"><span class="tab-num">01</span>Dış Çarpım</button>
+  <button class="tab-btn" onclick="showTab(1)"><span class="tab-num">02</span>Geom. Çarpım</button>
+  <button class="tab-btn" onclick="showTab(2)"><span class="tab-num">03</span>Rotorlar</button>
+  <button class="tab-btn" onclick="showTab(3)"><span class="tab-num">04</span>Yansıma</button>
+  <button class="tab-btn" onclick="showTab(4)"><span class="tab-num">05</span>Robot Kolu</button>
+  <button class="tab-btn" onclick="showTab(5)"><span class="tab-num">06</span>KGC Nesneleri</button>
+  <button class="tab-btn" onclick="showTab(6)"><span class="tab-num">07</span>Multivektör</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 0: DIŞ ÇARPIM -->
+<!-- ============================================================ -->
+<div class="panel active" id="tab0">
+  <div class="formula-card">
+    <h2>Dış Çarpım (Wedge Product) — a ∧ b</h2>
+    <p>İki vektörün dış çarpımı, onların oluşturduğu yönlendirilmiş alanı (bivektörü) temsil eder. Boyutu ve işareti geometrik anlam taşır: |a ∧ b| = |a| |b| sin θ</p>
+    <div class="formula">a ∧ b = (a₁b₂ − a₂b₁) e₁∧e₂    [antisimetrik: a ∧ b = −b ∧ a]</div>
+  </div>
+  <div class="lab-layout">
+    <div class="canvas-wrap" style="position:relative">
+      <div class="canvas-label">Etkileşimli Tuval — Vektörleri Sürükle</div>
+      <canvas id="wedgeCanvas" width="680" height="420"></canvas>
+      <div class="drag-hint">⟵ uçları sürükleyebilirsiniz</div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>Vektör a</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">a₁</span>
+          <input type="range" id="wa1" min="-4" max="4" step="0.1" value="2" oninput="updateWedge()">
+          <span class="ctrl-val" id="wa1v">2.0</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">a₂</span>
+          <input type="range" id="wa2" min="-4" max="4" step="0.1" value="0.5" oninput="updateWedge()">
+          <span class="ctrl-val" id="wa2v">0.5</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Vektör b</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">b₁</span>
+          <input type="range" id="wb1" min="-4" max="4" step="0.1" value="0.5" oninput="updateWedge()">
+          <span class="ctrl-val" id="wb1v">0.5</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">b₂</span>
+          <input type="range" id="wb2" min="-4" max="4" step="0.1" value="2" oninput="updateWedge()">
+          <span class="ctrl-val" id="wb2v">2.0</span>
+        </div>
+      </div>
+      <div class="readout" id="wedgeReadout">
+        <h3>Hesaplama Sonuçları</h3>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#d4a84b"></div><span class="legend-text">vektör a</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4dc4d9"></div><span class="legend-text">vektör b</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(157,127,212,0.5)"></div><span class="legend-text">a ∧ b (alan)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 1: GEOMETRİK ÇARPIM -->
+<!-- ============================================================ -->
+<div class="panel" id="tab1">
+  <div class="formula-card">
+    <h2>Geometrik Çarpım — ab = a·b + a∧b</h2>
+    <p>Geometrik çarpım, iç çarpımı (skaler kısım) ve dış çarpımı (bivektör kısım) bir arada içerir. Bu sayede hem uzunluk/açı bilgisi hem de alan/yön bilgisi tek formülde birleşir.</p>
+    <div class="formula">ab = a·b + a∧b = |a||b|cosθ + |a||b|sinθ · e₁∧e₂</div>
+  </div>
+  <div class="lab-layout">
+    <div class="canvas-wrap" style="position:relative">
+      <div class="canvas-label">Geometrik Çarpım Ayrışımı</div>
+      <canvas id="gpCanvas" width="680" height="420"></canvas>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>Vektör a (açı)</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">θₐ</span>
+          <input type="range" id="ga_ang" min="0" max="360" step="1" value="30" oninput="updateGP()">
+          <span class="ctrl-val" id="ga_angv">30°</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">|a|</span>
+          <input type="range" id="ga_mag" min="0.5" max="3" step="0.1" value="2" oninput="updateGP()">
+          <span class="ctrl-val" id="ga_magv">2.0</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Vektör b (açı)</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">θᵦ</span>
+          <input type="range" id="gb_ang" min="0" max="360" step="1" value="100" oninput="updateGP()">
+          <span class="ctrl-val" id="gb_angv">100°</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">|b|</span>
+          <input type="range" id="gb_mag" min="0.5" max="3" step="0.1" value="1.7" oninput="updateGP()">
+          <span class="ctrl-val" id="gb_magv">1.7</span>
+        </div>
+      </div>
+      <div class="readout" id="gpReadout">
+        <h3>Çarpım Bileşenleri</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 2: ROTORLAR -->
+<!-- ============================================================ -->
+<div class="panel" id="tab2">
+  <div class="formula-card">
+    <h2>Rotorlar ile Dönme — R v R†</h2>
+    <p>Rotor R = cos(θ/2) + sin(θ/2)·B, bir vektörü sandwich çarpımıyla döndürür. Burada B = e₁∧e₂ dönme düzleminin bivektörüdür. Bu formülasyon, gimbal kilidi sorununa düşmez.</p>
+    <div class="formula">v′ = R v R†    R = cos(θ/2) + sin(θ/2)(e₁∧e₂)    R† = cos(θ/2) − sin(θ/2)(e₁∧e₂)</div>
+  </div>
+  <div class="lab-layout">
+    <div class="canvas-wrap" style="position:relative">
+      <div class="canvas-label">Rotor Dönme Simülatörü — e₁∧e₂ düzlemi</div>
+      <canvas id="rotorCanvas" width="680" height="420"></canvas>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>Orijinal Vektör v</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">v₁</span>
+          <input type="range" id="rv1" min="-3" max="3" step="0.1" value="2.5" oninput="updateRotor()">
+          <span class="ctrl-val" id="rv1v">2.5</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">v₂</span>
+          <input type="range" id="rv2" min="-3" max="3" step="0.1" value="0.5" oninput="updateRotor()">
+          <span class="ctrl-val" id="rv2v">0.5</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Dönme Açısı θ</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">θ</span>
+          <input type="range" id="rtheta" min="0" max="360" step="1" value="60" oninput="updateRotor()">
+          <span class="ctrl-val" id="rthetav">60°</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Animasyon</h3>
+        <button class="btn accent" onclick="toggleRotorAnim()">▶ Döndür</button>
+      </div>
+      <div class="readout" id="rotorReadout">
+        <h3>Rotor Bileşenleri</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 3: YANSIMA -->
+<!-- ============================================================ -->
+<div class="panel" id="tab3">
+  <div class="formula-card">
+    <h2>Yansıma ve Dönme Bileşimi</h2>
+    <p>Bir vektörün n yüzeyine yansıması: v′ = −n v n⁻¹. İki ardışık yansımanın bileşimi bir dönme üretir — bu, rotorların temel geometrik anlamıdır.</p>
+    <div class="formula">Yansıma: v′ = −n v n⁻¹    |    2 Yansıma = Dönme: θ = 2 × (n₁,n₂ arası açı)</div>
+  </div>
+  <div class="lab-layout">
+    <div class="canvas-wrap" style="position:relative">
+      <div class="canvas-label">Yansıma Simülatörü</div>
+      <canvas id="reflCanvas" width="680" height="420"></canvas>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>Vektör v</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">|v|</span>
+          <input type="range" id="rfmag" min="0.5" max="3" step="0.1" value="2" oninput="updateRefl()">
+          <span class="ctrl-val" id="rfmagv">2.0</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">θᵥ</span>
+          <input type="range" id="rfang" min="0" max="360" step="1" value="40" oninput="updateRefl()">
+          <span class="ctrl-val" id="rfangv">40°</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Ayna 1 (normal n₁)</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">φ₁</span>
+          <input type="range" id="rfa1" min="0" max="180" step="1" value="70" oninput="updateRefl()">
+          <span class="ctrl-val" id="rfa1v">70°</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Ayna 2 (normal n₂)</h3>
+        <div class="ctrl-row">
+          <span class="ctrl-label">φ₂</span>
+          <input type="range" id="rfa2" min="0" max="180" step="1" value="115" oninput="updateRefl()">
+          <span class="ctrl-val" id="rfa2v">115°</span>
+        </div>
+      </div>
+      <div class="readout" id="reflReadout">
+        <h3>Hesaplamalar</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 4: ROBOT KOLU -->
+<!-- ============================================================ -->
+<div class="panel" id="tab4">
+  <div class="formula-card">
+    <h2>Rotor Bileşimi ile İleri Kinematik</h2>
+    <p>Robot kolunun her eklemi bir rotor R_i ile temsil edilir. Uç noktanın konumu, rotorların bileşimi R = R₁ R₂ R₃ ile tek adımda hesaplanır.</p>
+    <div class="formula">p_uç = R₁(R₂(R₃ · p_baz · R₃†) · R₂†) · R₁†    [iç içe sandwich çarpımı]</div>
+  </div>
+  <div class="robot-wrap">
+    <div class="canvas-label">2D Robot Kolu — İleri Kinematik (Rotor Bileşimi)</div>
+    <div style="display:grid; grid-template-columns:1fr 300px;">
+      <canvas id="robotCanvas" width="700" height="440"></canvas>
+      <div style="padding:20px; display:flex; flex-direction:column; gap:14px; border-left:1px solid var(--border);">
+        <div class="ctrl-group">
+          <h3>Eklem 1 (omuz)</h3>
+          <div class="ctrl-row">
+            <span class="ctrl-label">θ₁</span>
+            <input type="range" id="r1" min="-180" max="180" step="1" value="30" oninput="updateRobot()">
+            <span class="ctrl-val" id="r1v">30°</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">L₁</span>
+            <input type="range" id="l1" min="50" max="180" step="5" value="120" oninput="updateRobot()">
+            <span class="ctrl-val" id="l1v">120</span>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <h3>Eklem 2 (dirsek)</h3>
+          <div class="ctrl-row">
+            <span class="ctrl-label">θ₂</span>
+            <input type="range" id="r2" min="-180" max="180" step="1" value="-50" oninput="updateRobot()">
+            <span class="ctrl-val" id="r2v">-50°</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">L₂</span>
+            <input type="range" id="l2" min="30" max="150" step="5" value="90" oninput="updateRobot()">
+            <span class="ctrl-val" id="l2v">90</span>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <h3>Eklem 3 (bilek)</h3>
+          <div class="ctrl-row">
+            <span class="ctrl-label">θ₃</span>
+            <input type="range" id="r3" min="-180" max="180" step="1" value="20" oninput="updateRobot()">
+            <span class="ctrl-val" id="r3v">20°</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">L₃</span>
+            <input type="range" id="l3" min="20" max="100" step="5" value="60" oninput="updateRobot()">
+            <span class="ctrl-val" id="l3v">60</span>
+          </div>
+        </div>
+        <div class="readout" id="robotReadout">
+          <h3>Kinematik Durum</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 5: KGC NESNELERİ -->
+<!-- ============================================================ -->
+<div class="panel" id="tab5">
+  <div class="formula-card">
+    <h2>Konformal Geometrik Cebir — KGC (G₄,₁)</h2>
+    <p>KGC'de noktalar, doğrular, çemberler ve küreler tek bir çerçevede temsil edilir. Meet operatörü (∨) kesişimleri, Join birleşimleri verir.</p>
+    <div class="formula">Nokta: X = x + ½|x|²e∞ + e₀    |    Küre: S = X − ½r²e∞    |    Meet: A∩B = (A* ∧ B*)*</div>
+  </div>
+  <div class="kgc-grid">
+    <div>
+      <div class="canvas-wrap">
+        <div class="canvas-label">KGC Nesneleri ve Kesişimler</div>
+        <canvas id="kgcCanvas" width="460" height="400"></canvas>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>Küre 1</h3>
+        <div class="ctrl-row"><span class="ctrl-label">cx</span><input type="range" id="s1cx" min="-3" max="3" step="0.1" value="-0.8" oninput="updateKGC()"><span class="ctrl-val" id="s1cxv">-0.8</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">cy</span><input type="range" id="s1cy" min="-3" max="3" step="0.1" value="0" oninput="updateKGC()"><span class="ctrl-val" id="s1cyv">0.0</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">r</span><input type="range" id="s1r" min="0.2" max="3" step="0.1" value="1.5" oninput="updateKGC()"><span class="ctrl-val" id="s1rv">1.5</span></div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Küre 2</h3>
+        <div class="ctrl-row"><span class="ctrl-label">cx</span><input type="range" id="s2cx" min="-3" max="3" step="0.1" value="0.8" oninput="updateKGC()"><span class="ctrl-val" id="s2cxv">0.8</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">cy</span><input type="range" id="s2cy" min="-3" max="3" step="0.1" value="0" oninput="updateKGC()"><span class="ctrl-val" id="s2cyv">0.0</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">r</span><input type="range" id="s2r" min="0.2" max="3" step="0.1" value="1.5" oninput="updateKGC()"><span class="ctrl-val" id="s2rv">1.5</span></div>
+      </div>
+      <div class="ctrl-group">
+        <h3>Düzlem (ax + by = d)</h3>
+        <div class="ctrl-row"><span class="ctrl-label">a</span><input type="range" id="pla" min="-2" max="2" step="0.1" value="1" oninput="updateKGC()"><span class="ctrl-val" id="plav">1.0</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">b</span><input type="range" id="plb" min="-2" max="2" step="0.1" value="0.2" oninput="updateKGC()"><span class="ctrl-val" id="plbv">0.2</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">d</span><input type="range" id="pld" min="-3" max="3" step="0.1" value="0.5" oninput="updateKGC()"><span class="ctrl-val" id="pldv">0.5</span></div>
+      </div>
+      <div class="readout" id="kgcReadout"><h3>Kesişim Bilgisi</h3></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 6: MULTİVEKTÖR -->
+<!-- ============================================================ -->
+<div class="panel" id="tab6">
+  <div class="formula-card">
+    <h2>Multivektör Kademe Ayrışımı</h2>
+    <p>G(3,0) uzayında bir multivektör M, kademe-0 (skaler), kademe-1 (vektör), kademe-2 (bivektör) ve kademe-3 (trivektör/sözdeskaler) bileşenlerinden oluşur.</p>
+    <div class="formula">M = ⟨M⟩₀ + ⟨M⟩₁ + ⟨M⟩₂ + ⟨M⟩₃    =  α + (a₁e₁+a₂e₂+a₃e₃) + (B₁₂e₁₂+B₁₃e₁₃+B₂₃e₂₃) + βI</div>
+  </div>
+  <div class="lab-layout">
+    <div class="canvas-wrap">
+      <div class="canvas-label">Multivektör Görselleştirici — G(3,0)</div>
+      <canvas id="mvCanvas" width="680" height="420"></canvas>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <h3>⟨M⟩₀ — Skaler</h3>
+        <div class="ctrl-row"><span class="ctrl-label">α</span><input type="range" id="mv_s" min="-3" max="3" step="0.1" value="1" oninput="updateMV()"><span class="ctrl-val" id="mv_sv">1.0</span></div>
+      </div>
+      <div class="ctrl-group">
+        <h3>⟨M⟩₁ — Vektör</h3>
+        <div class="ctrl-row"><span class="ctrl-label">e₁</span><input type="range" id="mv_e1" min="-3" max="3" step="0.1" value="1.5" oninput="updateMV()"><span class="ctrl-val" id="mv_e1v">1.5</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">e₂</span><input type="range" id="mv_e2" min="-3" max="3" step="0.1" value="1" oninput="updateMV()"><span class="ctrl-val" id="mv_e2v">1.0</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">e₃</span><input type="range" id="mv_e3" min="-3" max="3" step="0.1" value="0.5" oninput="updateMV()"><span class="ctrl-val" id="mv_e3v">0.5</span></div>
+      </div>
+      <div class="ctrl-group">
+        <h3>⟨M⟩₂ — Bivektör</h3>
+        <div class="ctrl-row"><span class="ctrl-label">e₁₂</span><input type="range" id="mv_b12" min="-3" max="3" step="0.1" value="0.8" oninput="updateMV()"><span class="ctrl-val" id="mv_b12v">0.8</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">e₁₃</span><input type="range" id="mv_b13" min="-3" max="3" step="0.1" value="0.3" oninput="updateMV()"><span class="ctrl-val" id="mv_b13v">0.3</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">e₂₃</span><input type="range" id="mv_b23" min="-3" max="3" step="0.1" value="-0.5" oninput="updateMV()"><span class="ctrl-val" id="mv_b23v">-0.5</span></div>
+      </div>
+      <div class="ctrl-group">
+        <h3>⟨M⟩₃ — Trivektör (I)</h3>
+        <div class="ctrl-row"><span class="ctrl-label">β</span><input type="range" id="mv_t" min="-3" max="3" step="0.1" value="0.5" oninput="updateMV()"><span class="ctrl-val" id="mv_tv">0.5</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+const TAU = Math.PI * 2;
+const DEG = Math.PI / 180;
+
+function V(x, y) { return { x, y }; }
+function vadd(a, b) { return V(a.x + b.x, a.y + b.y); }
+function vsub(a, b) { return V(a.x - b.x, a.y - b.y); }
+function vscale(v, s) { return V(v.x * s, v.y * s); }
+function vlen(v) { return Math.sqrt(v.x * v.x + v.y * v.y); }
+function vnorm(v) { const l = vlen(v); return l < 1e-10 ? V(0, 0) : vscale(v, 1 / l); }
+function vdot(a, b) { return a.x * b.x + a.y * b.y; }
+function vwedge(a, b) { return a.x * b.y - a.y * b.x; }  // e1∧e2 coefficient
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = canvas.clientWidth * dpr || canvas.width * dpr;
+  canvas.height = canvas.clientHeight * dpr || canvas.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+function drawArrow(ctx, ox, oy, tx, ty, color, width = 2, label = null, labelOffset = V(0, -14)) {
+  const dx = tx - ox, dy = ty - oy;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 2) return;
+  const ux = dx / len, uy = dy / len;
+  const arrowLen = Math.min(14, len * 0.35);
+  const arrowWid = 6;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(ox, oy);
+  ctx.lineTo(tx - ux * arrowLen * 0.5, ty - uy * arrowLen * 0.5);
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(tx, ty);
+  ctx.lineTo(tx - ux * arrowLen - uy * arrowWid, ty - uy * arrowLen + ux * arrowWid);
+  ctx.lineTo(tx - ux * arrowLen + uy * arrowWid, ty - uy * arrowLen - ux * arrowWid);
+  ctx.closePath();
+  ctx.fill();
+
+  if (label) {
+    ctx.font = 'bold 13px JetBrains Mono, monospace';
+    ctx.fillStyle = color;
+    ctx.fillText(label, tx + labelOffset.x, ty + labelOffset.y);
+  }
+  ctx.restore();
+}
+
+function drawGrid(ctx, W, H, scale, cx, cy) {
+  ctx.save();
+  ctx.strokeStyle = '#1e1e35';
+  ctx.lineWidth = 1;
+  const step = scale;
+  for (let x = cx % step; x < W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = cy % step; y < H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.strokeStyle = '#2a2a50';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillStyle = '#3a3a60';
+  for (let i = 1; i * step < Math.max(W, H); i++) {
+    if (cx + i * step < W) ctx.fillText(i, cx + i * step - 4, cy + 14);
+    if (cx - i * step > 0) ctx.fillText(-i, cx - i * step - 8, cy + 14);
+    if (cy - i * step > 0) ctx.fillText(i, cx + 4, cy - i * step + 4);
+    if (cy + i * step < H) ctx.fillText(-i, cx + 4, cy + i * step + 4);
+  }
+  ctx.restore();
+}
+
+function getSlider(id) { return parseFloat(document.getElementById(id).value); }
+function setLabel(id, val, decimals = 1) {
+  document.getElementById(id + 'v').textContent =
+    typeof val === 'string' ? val : val.toFixed(decimals);
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showTab(idx) {
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  [updateWedge, updateGP, updateRotor, updateRefl, updateRobot, updateKGC, updateMV][idx]();
+}
+
+// ============================================================
+// TAB 0: WEDGE PRODUCT
+// ============================================================
+function updateWedge() {
+  const a1 = getSlider('wa1'), a2 = getSlider('wa2');
+  const b1 = getSlider('wb1'), b2 = getSlider('wb2');
+  setLabel('wa1', a1); setLabel('wa2', a2);
+  setLabel('wb1', b1); setLabel('wb2', b2);
+  drawWedge(a1, a2, b1, b2);
+
+  const dot = a1 * b1 + a2 * b2;
+  const wedge = a1 * b2 - a2 * b1;
+  const magA = Math.sqrt(a1 ** 2 + a2 ** 2);
+  const magB = Math.sqrt(b1 ** 2 + b2 ** 2);
+  const angle = magA > 0 && magB > 0 ? Math.acos(Math.max(-1, Math.min(1, dot / (magA * magB)))) * 180 / Math.PI : 0;
+
+  document.getElementById('wedgeReadout').innerHTML = `
+    <h3>Hesaplama Sonuçları</h3>
+    <div class="readout-row"><span class="readout-key">a · b (iç çarpım)</span><span class="readout-val">${dot.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">a ∧ b katsayısı</span><span class="readout-val">${wedge.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">|a ∧ b| (alan)</span><span class="readout-val">${Math.abs(wedge).toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">yönelim</span><span class="readout-val">${wedge > 0 ? '+ (CCW)' : wedge < 0 ? '− (CW)' : '0 (paralel)'}</span></div>
+    <div class="readout-row"><span class="readout-key">açı θ</span><span class="readout-val">${angle.toFixed(1)}°</span></div>
+    <div class="readout-row"><span class="readout-key">|a|</span><span class="readout-val">${magA.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">|b|</span><span class="readout-val">${magB.toFixed(3)}</span></div>
+  `;
+}
+
+function drawWedge(a1, a2, b1, b2) {
+  const canvas = document.getElementById('wedgeCanvas');
+  const W = canvas.offsetWidth || 680, H = canvas.offsetHeight || 420;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  canvas.width = W; canvas.height = H;
+
+  const scale = 70, cx = W / 2, cy = H / 2;
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, scale, cx, cy);
+
+  const ax = cx + a1 * scale, ay = cy - a2 * scale;
+  const bx = cx + b1 * scale, by = cy - b2 * scale;
+  const wedge = a1 * b2 - a2 * b1;
+  const isPos = wedge >= 0;
+
+  // filled parallelogram
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(ax, ay);
+  ctx.lineTo(ax + (bx - cx), ay + (by - cy));
+  ctx.lineTo(bx, by);
+  ctx.closePath();
+  ctx.fillStyle = isPos ? 'rgba(157,127,212,0.25)' : 'rgba(217,96,96,0.2)';
+  ctx.fill();
+  ctx.strokeStyle = isPos ? 'rgba(157,127,212,0.6)' : 'rgba(217,96,96,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.stroke();
+  ctx.restore();
+
+  // area label inside parallelogram
+  const px = cx + (a1 + b1) * scale / 2, py = cy - (a2 + b2) * scale / 2;
+  ctx.save();
+  ctx.font = '13px JetBrains Mono, monospace';
+  ctx.fillStyle = isPos ? 'rgba(157,127,212,0.9)' : 'rgba(217,96,96,0.9)';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${wedge.toFixed(2)} e₁∧e₂`, px, py);
+  ctx.restore();
+
+  // vectors
+  drawArrow(ctx, cx, cy, ax, ay, '#d4a84b', 2.5, 'a', V(-4, -16));
+  drawArrow(ctx, cx, cy, bx, by, '#4dc4d9', 2.5, 'b', V(6, -12));
+
+  // dot labels at tips
+  [{ x: ax, y: ay, c: '#d4a84b' }, { x: bx, y: by, c: '#4dc4d9' }].forEach(p => {
+    ctx.save(); ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, TAU); ctx.fill(); ctx.restore();
+  });
+}
+
+// ============================================================
+// TAB 1: GEOMETRIC PRODUCT
+// ============================================================
+function updateGP() {
+  const aAng = getSlider('ga_ang') * DEG, aMag = getSlider('ga_mag');
+  const bAng = getSlider('gb_ang') * DEG, bMag = getSlider('gb_mag');
+  setLabel('ga_ang', getSlider('ga_ang') + '°');
+  setLabel('ga_mag', aMag);
+  setLabel('gb_ang', getSlider('gb_ang') + '°');
+  setLabel('gb_mag', bMag);
+
+  const a = V(Math.cos(aAng) * aMag, Math.sin(aAng) * aMag);
+  const b = V(Math.cos(bAng) * bMag, Math.sin(bAng) * bMag);
+  const dot = vdot(a, b);
+  const wedge = vwedge(a, b);
+  const angle = (getSlider('gb_ang') - getSlider('ga_ang') + 360) % 360;
+
+  document.getElementById('gpReadout').innerHTML = `
+    <h3>Çarpım Bileşenleri</h3>
+    <div class="readout-row"><span class="readout-key">a · b (skaler)</span><span class="readout-val">${dot.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">a ∧ b (bivektör)</span><span class="readout-val">${wedge.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">|ab| = |a||b|</span><span class="readout-val">${(aMag * bMag).toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">açı (b→a)</span><span class="readout-val">${angle.toFixed(1)}°</span></div>
+    <div class="readout-row"><span class="readout-key">ab = …+…i</span><span class="readout-val">${dot.toFixed(2)}+${wedge.toFixed(2)}i</span></div>
+  `;
+
+  drawGP(a, b, dot, wedge, aMag, bMag);
+}
+
+function drawGP(a, b, dot, wedge, aMag, bMag) {
+  const canvas = document.getElementById('gpCanvas');
+  const W = 680, H = 420;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const scale = 70, cx = W / 2, cy = H / 2;
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, scale, cx, cy);
+
+  const ax = cx + a.x * scale, ay = cy - a.y * scale;
+  const bx = cx + b.x * scale, by = cy - b.y * scale;
+
+  // bivector parallelogram
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy); ctx.lineTo(ax, ay);
+  ctx.lineTo(ax + b.x * scale, ay - b.y * scale);
+  ctx.lineTo(bx, by); ctx.closePath();
+  ctx.fillStyle = 'rgba(157,127,212,0.18)';
+  ctx.fill();
+  ctx.restore();
+
+  // dot product projection line
+  const bUnit = vnorm(b);
+  const projLen = dot / bMag;
+  ctx.save();
+  ctx.strokeStyle = '#5dc48e';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx + bUnit.x * projLen * scale, cy - bUnit.y * projLen * scale);
+  ctx.lineTo(ax, ay);
+  ctx.stroke();
+  ctx.restore();
+
+  drawArrow(ctx, cx, cy, ax, ay, '#d4a84b', 2.5, 'a', V(6, -14));
+  drawArrow(ctx, cx, cy, bx, by, '#4dc4d9', 2.5, 'b', V(6, -14));
+
+  // projection on b
+  ctx.save();
+  ctx.fillStyle = '#5dc48e';
+  ctx.beginPath();
+  ctx.arc(cx + bUnit.x * projLen * scale, cy - bUnit.y * projLen * scale, 5, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  // arc angle
+  ctx.save();
+  const a_ang = Math.atan2(-a.y, a.x);
+  const b_ang = Math.atan2(-b.y, b.x);
+  ctx.strokeStyle = 'rgba(93,196,142,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, Math.min(a_ang, b_ang), Math.max(a_ang, b_ang));
+  ctx.stroke();
+  ctx.restore();
+
+  // legend
+  ctx.save();
+  ctx.font = '12px JetBrains Mono, monospace';
+  ctx.fillStyle = '#5dc48e';
+  ctx.fillText(`a·b = ${dot.toFixed(2)}`, 16, H - 40);
+  ctx.fillStyle = '#9f7fd4';
+  ctx.fillText(`a∧b = ${wedge.toFixed(2)} e₁∧e₂`, 16, H - 22);
+  ctx.restore();
+}
+
+// ============================================================
+// TAB 2: ROTORS
+// ============================================================
+let rotorAnimId = null;
+let rotorAnim = false;
+let rotorAngle = 60;
+
+function toggleRotorAnim() {
+  rotorAnim = !rotorAnim;
+  const btn = document.querySelector('[onclick="toggleRotorAnim()"]');
+  btn.textContent = rotorAnim ? '⏸ Durdur' : '▶ Döndür';
+  if (rotorAnim) animateRotor();
+  else cancelAnimationFrame(rotorAnimId);
+}
+
+function animateRotor() {
+  rotorAngle = (rotorAngle + 0.8) % 360;
+  document.getElementById('rtheta').value = rotorAngle;
+  setLabel('rtheta', Math.round(rotorAngle) + '°');
+  drawRotorFrame(rotorAngle);
+  if (rotorAnim) rotorAnimId = requestAnimationFrame(animateRotor);
+}
+
+function updateRotor() {
+  const theta = getSlider('rtheta');
+  setLabel('rtheta', theta + '°');
+  rotorAngle = theta;
+  drawRotorFrame(theta);
+}
+
+function drawRotorFrame(theta) {
+  const v1 = getSlider('rv1'), v2 = getSlider('rv2');
+  setLabel('rv1', v1); setLabel('rv2', v2);
+
+  const t = theta * DEG;
+  const cos_h = Math.cos(t / 2), sin_h = Math.sin(t / 2);
+  // Rotor: R = cos(θ/2) + sin(θ/2) e₁₂
+  // Rotation in 2D: v' = R v R†
+  // For 2D: v' = rotate by θ
+  const vp1 = v1 * Math.cos(t) - v2 * Math.sin(t);
+  const vp2 = v1 * Math.sin(t) + v2 * Math.cos(t);
+
+  document.getElementById('rotorReadout').innerHTML = `
+    <h3>Rotor Bileşenleri</h3>
+    <div class="readout-row"><span class="readout-key">R skaler</span><span class="readout-val">${cos_h.toFixed(4)}</span></div>
+    <div class="readout-row"><span class="readout-key">R bivektör</span><span class="readout-val">${sin_h.toFixed(4)}</span></div>
+    <div class="readout-row"><span class="readout-key">|R|²</span><span class="readout-val">${(cos_h**2+sin_h**2).toFixed(4)}</span></div>
+    <div class="readout-row"><span class="readout-key">v′ = (x,y)</span><span class="readout-val">(${vp1.toFixed(2)}, ${vp2.toFixed(2)})</span></div>
+    <div class="readout-row"><span class="readout-key">|v′| = |v|</span><span class="readout-val">${Math.sqrt(vp1**2+vp2**2).toFixed(4)}</span></div>
+  `;
+
+  const canvas = document.getElementById('rotorCanvas');
+  const W = 680, H = 420;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const scale = 80, cx = W / 2, cy = H / 2;
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, scale, cx, cy);
+
+  // sweep arc
+  const v_ang = Math.atan2(v2, v1);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(212,168,75,0.15)';
+  ctx.lineWidth = 1;
+  const vMag = Math.sqrt(v1**2+v2**2);
+  ctx.beginPath();
+  ctx.arc(cx, cy, vMag * scale, -v_ang - t, -v_ang, t < 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // circle at |v|
+  ctx.save();
+  ctx.strokeStyle = '#2a2a50';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, vMag * scale, 0, TAU);
+  ctx.stroke();
+  ctx.restore();
+
+  // original vector
+  drawArrow(ctx, cx, cy, cx + v1 * scale, cy - v2 * scale, '#d4a84b', 2, 'v', V(6, -14));
+
+  // rotated vector
+  drawArrow(ctx, cx, cy, cx + vp1 * scale, cy - vp2 * scale, '#4dc4d9', 2.5, "v'", V(6, -14));
+
+  // angle arc
+  ctx.save();
+  ctx.strokeStyle = 'rgba(77,196,217,0.5)';
+  ctx.lineWidth = 1.5;
+  const start_a = -v_ang, end_a = -v_ang - t;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 35, Math.min(start_a, end_a), Math.max(start_a, end_a));
+  ctx.stroke();
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = '#4dc4d9';
+  const mid_a = (start_a + end_a) / 2;
+  ctx.fillText(`${Math.round(theta)}°`, cx + 45 * Math.cos(mid_a), cy + 45 * Math.sin(mid_a));
+  ctx.restore();
+
+  // rotor display
+  ctx.save();
+  ctx.font = '12px JetBrains Mono';
+  ctx.fillStyle = 'rgba(212,168,75,0.8)';
+  ctx.fillText(`R = ${cos_h.toFixed(3)} + ${sin_h.toFixed(3)}(e₁∧e₂)`, 14, H - 22);
+  ctx.restore();
+}
+
+// ============================================================
+// TAB 3: REFLECTION
+// ============================================================
+function updateRefl() {
+  const mag = getSlider('rfmag'), ang = getSlider('rfang') * DEG;
+  const phi1 = getSlider('rfa1') * DEG, phi2 = getSlider('rfa2') * DEG;
+  setLabel('rfmag', getSlider('rfmag'));
+  setLabel('rfang', getSlider('rfang') + '°');
+  setLabel('rfa1', getSlider('rfa1') + '°');
+  setLabel('rfa2', getSlider('rfa2') + '°');
+
+  const v = V(Math.cos(ang) * mag, Math.sin(ang) * mag);
+
+  // Reflect v through line with normal n = (cos φ, sin φ)
+  // v' = -n v n^{-1} = 2(v·n̂)n̂ - v  [for unit n]
+  function reflect(v, phi) {
+    const n = V(Math.cos(phi), Math.sin(phi));
+    const proj = vdot(v, n);
+    return V(2 * proj * n.x - v.x, 2 * proj * n.y - v.y);
+  }
+
+  const v1 = reflect(v, phi1);
+  const v2 = reflect(v1, phi2);
+
+  // composition of two reflections = rotation by 2*(phi2-phi1)
+  const rotAngle = 2 * (getSlider('rfa2') - getSlider('rfa1'));
+
+  document.getElementById('reflReadout').innerHTML = `
+    <h3>Hesaplamalar</h3>
+    <div class="readout-row"><span class="readout-key">v</span><span class="readout-val">(${v.x.toFixed(2)}, ${v.y.toFixed(2)})</span></div>
+    <div class="readout-row"><span class="readout-key">v₁ (1.yansıma)</span><span class="readout-val">(${v1.x.toFixed(2)}, ${v1.y.toFixed(2)})</span></div>
+    <div class="readout-row"><span class="readout-key">v₂ (2.yansıma)</span><span class="readout-val">(${v2.x.toFixed(2)}, ${v2.y.toFixed(2)})</span></div>
+    <div class="readout-row"><span class="readout-key">2×yansıma = dönme</span><span class="readout-val">${rotAngle.toFixed(1)}°</span></div>
+    <div class="readout-row"><span class="readout-key">|v| korunuyor?</span><span class="readout-val">${Math.abs(vlen(v) - vlen(v2)) < 0.01 ? '✓ evet' : '✗ hayır'}</span></div>
+  `;
+
+  const canvas = document.getElementById('reflCanvas');
+  const W = 680, H = 420;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const scale = 80, cx = W / 2, cy = H / 2;
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, scale, cx, cy);
+
+  // mirror lines (extended)
+  function drawMirror(phi, col) {
+    const dx = Math.cos(phi + Math.PI / 2), dy = Math.sin(phi + Math.PI / 2);
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx - dx * 250, cy + dy * 250);
+    ctx.lineTo(cx + dx * 250, cy - dy * 250);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawMirror(phi1, 'rgba(212,168,75,0.5)');
+  drawMirror(phi2, 'rgba(93,196,142,0.5)');
+
+  // normals
+  drawArrow(ctx, cx, cy, cx + Math.cos(phi1) * 45, cy - Math.sin(phi1) * 45, 'rgba(212,168,75,0.7)', 1.5, 'n₁', V(4, -10));
+  drawArrow(ctx, cx, cy, cx + Math.cos(phi2) * 45, cy - Math.sin(phi2) * 45, 'rgba(93,196,142,0.7)', 1.5, 'n₂', V(4, -10));
+
+  // vectors
+  drawArrow(ctx, cx, cy, cx + v.x * scale, cy - v.y * scale, '#d4a84b', 2.5, 'v', V(6, -14));
+  drawArrow(ctx, cx, cy, cx + v1.x * scale, cy - v1.y * scale, '#9f7fd4', 2, 'v₁', V(6, -14));
+  drawArrow(ctx, cx, cy, cx + v2.x * scale, cy - v2.y * scale, '#4dc4d9', 2.5, 'v₂', V(6, -14));
+
+  ctx.save();
+  ctx.font = '12px JetBrains Mono';
+  ctx.fillStyle = 'rgba(93,196,142,0.9)';
+  ctx.fillText(`2×yansıma ≡ ${rotAngle.toFixed(0)}° dönme`, 14, H - 22);
+  ctx.restore();
+}
+
+// ============================================================
+// TAB 4: ROBOT ARM
+// ============================================================
+function updateRobot() {
+  const theta1 = getSlider('r1') * DEG, L1 = getSlider('l1');
+  const theta2 = getSlider('r2') * DEG, L2 = getSlider('l2');
+  const theta3 = getSlider('r3') * DEG, L3 = getSlider('l3');
+  setLabel('r1', getSlider('r1') + '°'); setLabel('l1', getSlider('l1'));
+  setLabel('r2', getSlider('r2') * 1 + '°'); setLabel('l2', getSlider('l2'));
+  setLabel('r3', getSlider('r3') * 1 + '°'); setLabel('l3', getSlider('l3'));
+
+  // Forward kinematics using rotor composition
+  // Each rotor R_i = cos(θ_i/2) + sin(θ_i/2) e₁₂ rotates in 2D plane
+  // cumulative angle = sum of joint angles
+  const cum1 = theta1;
+  const cum2 = theta1 + theta2;
+  const cum3 = theta1 + theta2 + theta3;
+
+  const ox = 350, oy = 360;
+
+  const j1x = ox + L1 * Math.cos(cum1);
+  const j1y = oy - L1 * Math.sin(cum1);
+
+  const j2x = j1x + L2 * Math.cos(cum2);
+  const j2y = j1y - L2 * Math.sin(cum2);
+
+  const epx = j2x + L3 * Math.cos(cum3);
+  const epy = j2y - L3 * Math.sin(cum3);
+
+  document.getElementById('robotReadout').innerHTML = `
+    <h3>Kinematik Durum</h3>
+    <div class="readout-row"><span class="readout-key">Eklem 1 (omuz)</span><span class="readout-val">(${j1x.toFixed(0)}, ${(360-j1y).toFixed(0)})</span></div>
+    <div class="readout-row"><span class="readout-key">Eklem 2 (dirsek)</span><span class="readout-val">(${j2x.toFixed(0)}, ${(360-j2y).toFixed(0)})</span></div>
+    <div class="readout-row"><span class="readout-key">Uç noktası</span><span class="readout-val">(${(epx-ox).toFixed(0)}, ${(oy-epy).toFixed(0)})</span></div>
+    <div class="readout-row"><span class="readout-key">Kümülatif açı</span><span class="readout-val">${(cum3*180/Math.PI).toFixed(1)}°</span></div>
+  `;
+
+  const canvas = document.getElementById('robotCanvas');
+  const W = 700, H = 440;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+
+  // workspace circle
+  const reach = L1 + L2 + L3;
+  ctx.save();
+  ctx.strokeStyle = '#1e1e35';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath(); ctx.arc(ox, oy, reach, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ox, oy, Math.abs(L1 - L2 - L3), 0, TAU); ctx.stroke();
+  ctx.restore();
+
+  // ground
+  ctx.save();
+  ctx.strokeStyle = '#2a2a45';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, oy + 18); ctx.lineTo(W, oy + 18); ctx.stroke();
+  for (let x = 0; x < W; x += 16) {
+    ctx.beginPath(); ctx.moveTo(x, oy + 18); ctx.lineTo(x - 10, oy + 30); ctx.stroke();
+  }
+  ctx.restore();
+
+  // arm segments
+  function drawSegment(x1, y1, x2, y2, col, thick) {
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = thick;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.restore();
+  }
+
+  drawSegment(ox, oy, j1x, j1y, '#d4a84b', 14);
+  drawSegment(j1x, j1y, j2x, j2y, '#4dc4d9', 10);
+  drawSegment(j2x, j2y, epx, epy, '#9f7fd4', 7);
+
+  // joints
+  [[ox, oy, 14, '#d4a84b'], [j1x, j1y, 11, '#d4a84b'], [j2x, j2y, 9, '#4dc4d9'], [epx, epy, 7, '#5dc48e']].forEach(([x, y, r, c]) => {
+    ctx.save();
+    ctx.fillStyle = '#0e0e1c';
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  });
+
+  // rotor labels
+  ctx.save();
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = 'rgba(212,168,75,0.7)';
+  ctx.fillText(`R₁(${getSlider('r1')}°)`, ox + 10, oy - 20);
+  ctx.fillStyle = 'rgba(77,196,217,0.7)';
+  ctx.fillText(`R₂(${getSlider('r2')}°)`, j1x + 10, j1y - 15);
+  ctx.fillStyle = 'rgba(159,127,212,0.7)';
+  ctx.fillText(`R₃(${getSlider('r3')}°)`, j2x + 10, j2y - 12);
+
+  ctx.fillStyle = '#5dc48e';
+  ctx.font = 'bold 11px JetBrains Mono';
+  ctx.fillText(`Uç: (${(epx-ox).toFixed(0)}, ${(oy-epy).toFixed(0)})`, epx + 10, epy - 10);
+  ctx.restore();
+
+  // trajectory trace - draw arc of end effector
+  ctx.save();
+  ctx.strokeStyle = 'rgba(93,196,142,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  ctx.beginPath();
+  for (let t3 = -180; t3 <= 180; t3 += 5) {
+    const c3 = cum2 + t3 * DEG;
+    const tx = j2x + L3 * Math.cos(c3);
+    const ty = j2y - L3 * Math.sin(c3);
+    t3 === -180 ? ctx.moveTo(tx, ty) : ctx.lineTo(tx, ty);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ============================================================
+// TAB 5: KGC
+// ============================================================
+function updateKGC() {
+  const s1cx = getSlider('s1cx'), s1cy = getSlider('s1cy'), s1r = getSlider('s1r');
+  const s2cx = getSlider('s2cx'), s2cy = getSlider('s2cy'), s2r = getSlider('s2r');
+  const pla = getSlider('pla'), plb = getSlider('plb'), pld = getSlider('pld');
+  ['s1cx','s1cy','s1r','s2cx','s2cy','s2r','pla','plb','pld'].forEach(id => setLabel(id, getSlider(id)));
+
+  // Circle-circle intersection
+  const d = Math.sqrt((s2cx - s1cx) ** 2 + (s2cy - s1cy) ** 2);
+  let intersect = 'yok';
+  let intPoints = [];
+  if (d < s1r + s2r && d > Math.abs(s1r - s2r)) {
+    intersect = '2 nokta';
+    const a_ = (s1r ** 2 - s2r ** 2 + d ** 2) / (2 * d);
+    const h = Math.sqrt(Math.max(0, s1r ** 2 - a_ ** 2));
+    const mx = s1cx + a_ * (s2cx - s1cx) / d;
+    const my = s1cy + a_ * (s2cy - s1cy) / d;
+    intPoints = [
+      { x: mx + h * (s2cy - s1cy) / d, y: my - h * (s2cx - s1cx) / d },
+      { x: mx - h * (s2cy - s1cy) / d, y: my + h * (s2cx - s1cx) / d }
+    ];
+  } else if (Math.abs(d - s1r - s2r) < 0.01 || Math.abs(d - Math.abs(s1r - s2r)) < 0.01) {
+    intersect = '1 nokta (teğet)';
+  } else if (d >= s1r + s2r) intersect = 'dışsal (kesişmiyor)';
+  else intersect = 'içsel (kesişmiyor)';
+
+  // Plane-circle intersections
+  const pMag = Math.sqrt(pla ** 2 + plb ** 2);
+
+  document.getElementById('kgcReadout').innerHTML = `
+    <h3>KGC Analizi</h3>
+    <div class="readout-row"><span class="readout-key">S₁∧S₂ (Meet)</span><span class="readout-val">${intersect}</span></div>
+    <div class="readout-row"><span class="readout-key">|S₁ · S₂|</span><span class="readout-val">${Math.abs((s1cx*s2cx+s1cy*s2cy-0.5*(s1r**2+s2r**2))).toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">d(O₁,O₂)</span><span class="readout-val">${d.toFixed(3)}</span></div>
+    <div class="readout-row"><span class="readout-key">r₁+r₂</span><span class="readout-val">${(s1r+s2r).toFixed(2)}</span></div>
+    <div class="readout-row"><span class="readout-key">düzlem normu</span><span class="readout-val">${pMag.toFixed(3)}</span></div>
+  `;
+
+  const canvas = document.getElementById('kgcCanvas');
+  const W = 460, H = 400;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const scale = 70, cx = W / 2, cy = H / 2;
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, scale, cx, cy);
+
+  // plane/line: pla*x + plb*y = pld
+  if (pMag > 0.01) {
+    const nx = pla / pMag, ny = plb / pMag;
+    const px0 = nx * pld / pMag, py0 = ny * pld / pMag;
+    const dx = -ny, dy = nx;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(93,196,142,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx + (px0 - dx * 6) * scale, cy - (py0 - dy * 6) * scale);
+    ctx.lineTo(cx + (px0 + dx * 6) * scale, cy - (py0 + dy * 6) * scale);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // spheres
+  function drawCircle(ccx, ccy, r, col, label) {
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx + ccx * scale, cy - ccy * scale, r * scale, 0, TAU);
+    ctx.stroke();
+    ctx.fillStyle = col.replace(')', ', 0.07)').replace('rgb', 'rgba');
+    ctx.fill();
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = col;
+    ctx.fillText(label, cx + ccx * scale + r * scale * 0.7, cy - ccy * scale - r * scale * 0.7);
+    ctx.restore();
+  }
+
+  drawCircle(s1cx, s1cy, s1r, '#d4a84b', 'S₁');
+  drawCircle(s2cx, s2cy, s2r, '#4dc4d9', 'S₂');
+
+  // intersection points
+  intPoints.forEach((p, i) => {
+    ctx.save();
+    ctx.fillStyle = '#e07b6b';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx + p.x * scale, cy - p.y * scale, 6, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = '#e07b6b';
+    ctx.fillText(`P${i + 1}`, cx + p.x * scale + 8, cy - p.y * scale - 8);
+    ctx.restore();
+  });
+
+  // centers
+  [[s1cx, s1cy, '#d4a84b'], [s2cx, s2cy, '#4dc4d9']].forEach(([x, y, c]) => {
+    ctx.save(); ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(cx + x * scale, cy - y * scale, 3, 0, TAU); ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ============================================================
+// TAB 6: MULTIVECTOR
+// ============================================================
+function updateMV() {
+  const s = getSlider('mv_s');
+  const e1 = getSlider('mv_e1'), e2 = getSlider('mv_e2'), e3 = getSlider('mv_e3');
+  const b12 = getSlider('mv_b12'), b13 = getSlider('mv_b13'), b23 = getSlider('mv_b23');
+  const t = getSlider('mv_t');
+
+  ['mv_s','mv_e1','mv_e2','mv_e3','mv_b12','mv_b13','mv_b23','mv_t'].forEach(id => setLabel(id, getSlider(id)));
+
+  const norm = Math.sqrt(s**2 + e1**2 + e2**2 + e3**2 + b12**2 + b13**2 + b23**2 + t**2);
+
+  const canvas = document.getElementById('mvCanvas');
+  const W = 680, H = 420;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0e0e1c';
+  ctx.fillRect(0, 0, W, H);
+
+  const components = [
+    { label: '⟨M⟩₀ skaler', val: s, color: '#d4a84b', grade: 0 },
+    { label: 'e₁', val: e1, color: '#4dc4d9', grade: 1 },
+    { label: 'e₂', val: e2, color: '#4dc4d9', grade: 1 },
+    { label: 'e₃', val: e3, color: '#4dc4d9', grade: 1 },
+    { label: 'e₁₂', val: b12, color: '#9f7fd4', grade: 2 },
+    { label: 'e₁₃', val: b13, color: '#9f7fd4', grade: 2 },
+    { label: 'e₂₃', val: b23, color: '#9f7fd4', grade: 2 },
+    { label: 'e₁₂₃ (I)', val: t, color: '#5dc48e', grade: 3 },
+  ];
+
+  const maxVal = 3;
+  const barH = 34, padX = 200, padY = 40, gap = 8;
+  const barMaxW = W - padX - 60;
+
+  ctx.save();
+  ctx.font = '11px JetBrains Mono, monospace';
+
+  // grade labels
+  const gradeY = [padY - 18, padY - 18 + (barH + gap), padY - 18 + 4 * (barH + gap), padY - 18 + 7 * (barH + gap)];
+  const gradeLabels = ['Kademe 0', 'Kademe 1', 'Kademe 2', 'Kademe 3'];
+  const gradeColors = ['#d4a84b', '#4dc4d9', '#9f7fd4', '#5dc48e'];
+
+  components.forEach((c, i) => {
+    const y = padY + i * (barH + gap);
+    const bw = Math.min(1, Math.abs(c.val) / maxVal) * barMaxW;
+    const isNeg = c.val < 0;
+
+    ctx.fillStyle = '#15152a';
+    ctx.fillRect(padX, y, barMaxW, barH);
+
+    // bar
+    ctx.fillStyle = c.color + '55';
+    if (isNeg) {
+      ctx.fillRect(padX + barMaxW / 2 - bw / 2, y + 4, bw, barH - 8);
+    } else {
+      ctx.fillRect(padX + barMaxW / 2, y + 4, bw / 2, barH - 8);
+    }
+    ctx.fillStyle = c.color;
+    if (isNeg) {
+      ctx.fillRect(padX + barMaxW / 2 - bw / 2, y + 4, bw, barH - 8);
+    } else {
+      ctx.fillRect(padX + barMaxW / 2, y + 4, bw / 2, barH - 8);
+    }
+
+    // zero line
+    ctx.strokeStyle = '#2a2a50';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX + barMaxW / 2, y);
+    ctx.lineTo(padX + barMaxW / 2, y + barH);
+    ctx.stroke();
+
+    // label
+    ctx.fillStyle = c.color;
+    ctx.textAlign = 'right';
+    ctx.fillText(c.label, padX - 10, y + barH / 2 + 4);
+
+    // value
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(c.val.toFixed(2), padX + barMaxW + 8, y + barH / 2 + 4);
+
+    ctx.textAlign = 'left';
+  });
+
+  // grade separators
+  [[1, '#d4a84b'], [4, '#4dc4d9'], [7, '#9f7fd4'], [8, '#5dc48e']].forEach(([idx, col]) => {
+    if (idx < components.length) {
+      const y = padY + idx * (barH + gap) - gap / 2 - 1;
+      ctx.strokeStyle = col + '40';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padX - 40, y);
+      ctx.lineTo(W - 40, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // norm
+  ctx.fillStyle = 'rgba(212,168,75,0.8)';
+  ctx.font = '13px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(`‖M‖ = ${norm.toFixed(4)}`, 14, H - 22);
+  ctx.fillStyle = 'rgba(128,128,168,0.7)';
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillText(`M = ${s.toFixed(1)} + ${e1.toFixed(1)}e₁ + ${e2.toFixed(1)}e₂ + ${e3.toFixed(1)}e₃ + ${b12.toFixed(1)}e₁₂ + ${b13.toFixed(1)}e₁₃ + ${b23.toFixed(1)}e₂₃ + ${t.toFixed(1)}I`, 14, H - 6);
+
+  ctx.restore();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  updateWedge();
+  updateGP();
+  updateRotor();
+  updateRefl();
+  updateRobot();
+  updateKGC();
+  updateMV();
+});
+
+window.addEventListener('resize', () => {
+  const activeTab = [...document.querySelectorAll('.panel')].findIndex(p => p.classList.contains('active'));
+  [updateWedge, updateGP, updateRotor, updateRefl, updateRobot, updateKGC, updateMV][activeTab]();
+});
+</script>
+</body>
+</html>
